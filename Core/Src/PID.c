@@ -17,12 +17,22 @@ void tune_PID(PID* p, float Kp, float Ki, float Kd, float Kb){
 	p->Kb = Kb;
 }
 
+void resetPID(PID* p){
+	p->Iterm = 0;
+	p->e_old = 0;
+}
+
 float PID_controller(PID* p , float y, float r){
 	float u;
 	float newIterm;
 	float e = 0;
 
 	e = r-y;
+
+	/*if (isinf(p->Iterm) || isnan(p->Iterm)) {
+		p->Iterm = 0;
+		p->e_old = 0;
+	}*/
 
 
 	float Pterm = p->Kp*e;
@@ -31,67 +41,43 @@ float PID_controller(PID* p , float y, float r){
 
 	p->e_old = e;
 
+	// ANTI-WINDUP DEL TERMINE INTEGRALE
+	/*if(newIterm > p->u_max){
+		newIterm = p->u_max;
+	}
+	else if(newIterm < p->u_min){
+		newIterm = p->u_min;
+	}*/
+
 	u = Pterm + newIterm + Dterm + p->offset;
 
+	//BACK CALCULATION
+	if(p->Kb != -1){
+		float saturated_u = u;
 
-	// VECCHIA SATURAZIONE
-	//-----------------------------------------
-	//Verifico la saturazione generale del PID
-	/*if(u > p->u_max){
-		u = p->u_max;
-	}
-	else if(u < p->u_min){
-		u = p->u_min;
+		if(saturated_u > p->u_max){
+			saturated_u = p->u_max;
+		}
+		else if(saturated_u < p->u_min){
+			saturated_u = p->u_min;
+		}
+
+		float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
+		p->Iterm = newIterm + correction;
+
+		u = saturated_u;
 	}
 	else{
-		p->Iterm = newIterm;
-	}
-	*/
-	//-----------------------------------------
-
-
-	//NUOVA IMPLEMENTAZIONE CON BACK-CALCULATION
-	//-----------------------------------------
-	/*float saturated_u = u;
-
-	if (saturated_u > p->u_max)
-		saturated_u = p->u_max;
-	else if (saturated_u < p->u_min)
-		saturated_u = p->u_min;
-
-	// Correggo l'integrale
-	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-	p->Iterm = newIterm + correction;
-
-	u = saturated_u;*/
-	//-----------------------------------------
-	if(newIterm > p->u_max){
-			newIterm = p->u_max;
-		}
-		else if(newIterm < p->u_min){
-			newIterm = p->u_min;
-		}
-
-	float saturated_u = u;
-
-	if(saturated_u > p->u_max){
-		saturated_u = p->u_max;
-	}
-	else if(saturated_u < p->u_min){
-		saturated_u = p->u_min;
+		//ANTI-WINDUP CLASSICO
+		if(u > p->u_max)
+			u = p->u_max;
+		else if(u < p->u_min)
+			u = p->u_min;
+		else
+			p->Iterm = newIterm;
 	}
 
-	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-	p->Iterm = newIterm + correction;
 
-	u = saturated_u;
-
-
-	//Print per il PID di sterzo
-	if(p->offset == 0){
-		//printf("errore: %.2f, y: %.2f, r: %.2f, u: %.2f \r\n", e, y, r, u);
-		//printf("%f\r\n", u);
-	}
 
 	return u;
 }
