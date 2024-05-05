@@ -927,7 +927,8 @@ void TransmitTelemetry(){
 	dataTX.quaternion_y = quat.y;
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
-	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
+	printf("%i, %.2f, %.2f\r\n", dataRX.enable, dataRX.linear_speed_ref_m_s, dataRX.curvature_radius_ref_m);
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
 }
 
 void resetBNO055(){
