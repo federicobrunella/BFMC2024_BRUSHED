@@ -40,7 +40,6 @@ typedef struct SerialDataRX {
 	float curvature_radius_ref_m; // [m]
 	float linear_speed_ref_m_s; //[m/s]
 	int enable; //Start Flag [bool]
-	float offset;
 } serialDataRX;
 
 typedef struct SerialDataTX {
@@ -122,20 +121,6 @@ int Flag_10ms = 0;
 int HardwareEnable = 0;
 int flag_button = 0;
 
-//User button press
-uint32_t buttonPressStartTime = 0;
-uint32_t buttonPressEndTime = 0;
-uint32_t pressDuration = 0;
-uint32_t cnt_10ms_button = 0; //Aumenta ogni 10ms
-int max_flag_button;
-
-//Variabili per calibrazione ESC
-int counter_cal_ESC = 0;
-float duty;
-int flag_cal = 0;
-
-//Inclinazione per il PID in discesa
-float x_acceleration = 0;
 
 //Filtro per la velocità
 #define MAX_RPM_VALUES 10
@@ -186,6 +171,7 @@ void resetBNO055();
  */
 int main(void)
 {
+
 	/* USER CODE BEGIN 1 */
 
 	/* USER CODE END 1 */
@@ -266,24 +252,6 @@ int main(void)
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		max_flag_button = 1;
-		switch(flag_button){
-		//Calibrazione
-		case -1:
-			//if(dataRX.enable == 0)
-			ProceduraCalibrazione();
-			break;
-			//Idle
-		case 0:
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-			HardwareEnable = 0;
-			break;
-		case 1:
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-			HardwareEnable = 1;
-			break;
-		}
-
 		//-------------------------------------------------------------
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
@@ -375,16 +343,14 @@ int main(void)
 				dataTX.current_servo_angle_deg = u_sterzo;
 			}
 		} else {
-			if(flag_button != -1){
-				set_PWM_and_dir(0, vehicleState.motor_direction_ref);
-				servo_motor(0);
+			set_PWM_and_dir(0, vehicleState.motor_direction_ref);
+			servo_motor(0);
 
-				// Reset dei pid
-				resetPID(&pid_steering);
-				resetPID(&pid_traction);
-				resetPID(&pid_traction_RWD);
-				resetPID(&pid_traction_DESC);
-			}
+			// Reset dei pid
+			resetPID(&pid_steering);
+			resetPID(&pid_traction);
+			resetPID(&pid_traction_RWD);
+			resetPID(&pid_traction_DESC);
 		}
 
 		TransmitTelemetry();
@@ -836,7 +802,7 @@ static void MX_GPIO_Init(void)
 
 	/*Configure GPIO pin : PC13 */
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -888,14 +854,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		//Encoder
 		vehicleState.counts = TIM2->CNT;
 		TIM2->CNT = TIM2->ARR / 2;
-
-		cnt_10ms_button++;
-
-		//Variabile per la calibrazione
-		if(flag_button == -1){
-			counter_cal_ESC++;
-		}
-
 	}
 }
 
@@ -909,31 +867,13 @@ int __io_putchar(int ch) {
 //-------------------------------------------------------------
 //BLUE user button
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
-
-			// Button pressed
-			buttonPressStartTime = cnt_10ms_button;
-
-		} else { // Button released
-			buttonPressEndTime = cnt_10ms_button;
-
-			//Verifico quanto tempo ho tenuto premuto il tasto
-			pressDuration = buttonPressEndTime - buttonPressStartTime;
-			if (pressDuration < SHORT_PRESS_THRESHOLD)
-			{
-				if(flag_button >= 0 && flag_button < max_flag_button){
-					flag_button++;
-				}
-				else
-				{
-					flag_button = 0;
-				}
-			} else if (pressDuration >= LONG_PRESS_THRESHOLD)
-			{
-				flag_button = -1;
-				counter_cal_ESC = 0;
-			}
+	if (GPIO_Pin == GPIO_PIN_13) {
+		if (HardwareEnable == 0) {
+			HardwareEnable = 1;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		} else {
+			HardwareEnable = 0;
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 		}
 	}
 }
@@ -987,48 +927,7 @@ void TransmitTelemetry(){
 	dataTX.quaternion_y = quat.y;
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
-	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
 	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
-}
-
-//-------------------------------------------------------------
-//CALIBRAZIONE TEMPORIZZATA
-void ProceduraCalibrazione(){
-
-	if(counter_cal_ESC < 5){
-		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
-	}
-	if(counter_cal_ESC <= 300){
-		if(!(counter_cal_ESC % 15)){
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		}
-	}
-	else if(counter_cal_ESC <= 600){
-		duty = NEUTRAL_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		servo_motor(-20);
-	}
-	else if(counter_cal_ESC <= 900){
-		duty = MAX_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-		servo_motor(0);
-	}
-	else if(counter_cal_ESC <= 1100){
-		duty = MIN_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		servo_motor(20);
-	}
-	else if(counter_cal_ESC <= 1200){
-		if(!(counter_cal_ESC % 15)){
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		}
-	}
-	else if (counter_cal_ESC <= 1300){
-		flag_button = 0;
-	}
 }
 
 void resetBNO055(){
