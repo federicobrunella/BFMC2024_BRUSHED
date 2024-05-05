@@ -4,9 +4,9 @@
 #ifndef INC_SERVO_MOTOR_H_
 #define INC_SERVO_MOTOR_H_
 
-#define DRITTO 92
-#define MAX_ANGOLO 30 //23
-#define MIN_ANGOLO -30 //-23
+#define DRITTO 90
+#define MAX_ANGOLO 46 //23
+#define MIN_ANGOLO -46 //-23
 #define PI 3.141592654
 
 

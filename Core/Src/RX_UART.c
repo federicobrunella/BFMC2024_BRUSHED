@@ -14,7 +14,7 @@
 #include <string.h>
 
 
-#define MAX_VALUES 4
+#define MAX_VALUES 3
 
 
 void parseCSV(const char *csvString, float *values) {

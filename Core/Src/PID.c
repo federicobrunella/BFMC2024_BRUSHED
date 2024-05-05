@@ -10,7 +10,7 @@ void init_PID(PID* p, float Tc, float u_max, float u_min, float offset){
 	p->offset = offset;
 }
 
-void tune_PID(PID* p, float Kp, float Ki, float Kd, float Kb){
+void tune_PID(PID*p, float Kp, float Ki, float Kd, float Kb){
 	p->Kp = Kp;
 	p->Ki = Ki;
 	p->Kd = Kd;
@@ -29,10 +29,10 @@ float PID_controller(PID* p , float y, float r){
 
 	e = r-y;
 
-	/*if (isinf(p->Iterm) || isnan(p->Iterm)) {
+	if (isinf(p->Iterm) || isnan(p->Iterm)) {
 		p->Iterm = 0;
 		p->e_old = 0;
-	}*/
+	}
 
 
 	float Pterm = p->Kp*e;
@@ -41,18 +41,20 @@ float PID_controller(PID* p , float y, float r){
 
 	p->e_old = e;
 
-	// ANTI-WINDUP DEL TERMINE INTEGRALE
-	/*if(newIterm > p->u_max){
-		newIterm = p->u_max;
-	}
-	else if(newIterm < p->u_min){
-		newIterm = p->u_min;
-	}*/
 
 	u = Pterm + newIterm + Dterm + p->offset;
 
-	//BACK CALCULATION
-	if(p->Kb != -1){
+	if(p->offset == 0){
+		// ANTI-WINDUP DEL TERMINE INTEGRALE
+		if(newIterm > p->u_max){
+			newIterm = p->u_max;
+		}
+		else if(newIterm < p->u_min){
+			newIterm = p->u_min;
+		}
+	}
+
+		// saturazione con back-calculation
 		float saturated_u = u;
 
 		if(saturated_u > p->u_max){
@@ -66,18 +68,22 @@ float PID_controller(PID* p , float y, float r){
 		p->Iterm = newIterm + correction;
 
 		u = saturated_u;
-	}
+	/*
 	else{
-		//ANTI-WINDUP CLASSICO
-		if(u > p->u_max)
+		if(u > p->u_max){
 			u = p->u_max;
-		else if(u < p->u_min)
+		}
+		else if(u < p->u_min){
 			u = p->u_min;
-		else
+		} else {
 			p->Iterm = newIterm;
+		}
 	}
+*/
 
-
+	if(p->offset == 0){
+		//printf("%f;%f;%f\r\n", u, p->Iterm, correction);
+	}
 
 	return u;
 }

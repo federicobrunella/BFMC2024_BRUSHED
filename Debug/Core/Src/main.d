@@ -34,8 +34,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/Configuration.h ../Core/Inc/bno055_stm32.h \
  ../Core/Inc/bno055.h ../Core/Inc/servo_motor.h ../Core/Inc/PID.h \
- ../Core/Inc/BL_motor.h ../Core/Inc/RX_UART.h ../Core/Inc/main.h \
- ../Core/Inc/DC_motor.h
+ ../Core/Inc/DC_motor.h ../Core/Inc/RX_UART.h ../Core/Inc/main.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -75,7 +74,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/bno055.h:
 ../Core/Inc/servo_motor.h:
 ../Core/Inc/PID.h:
-../Core/Inc/BL_motor.h:
+../Core/Inc/DC_motor.h:
 ../Core/Inc/RX_UART.h:
 ../Core/Inc/main.h:
-../Core/Inc/DC_motor.h:

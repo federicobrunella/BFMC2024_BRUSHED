@@ -24,6 +24,8 @@ typedef struct PID{
 void init_PID(PID*, float, float, float, float);
 void tune_PID(PID*,float,float,float, float);
 float PID_controller(PID*,float,float);
+void resetPID(PID*);
+
 
 
 
