@@ -19,5 +19,5 @@
 ../Core/Src/main.c:869:6:HAL_GPIO_EXTI_Callback	3
 ../Core/Src/main.c:883:6:HAL_UARTEx_RxEventCallback	5
 ../Core/Src/main.c:909:6:TransmitTelemetry	1
-../Core/Src/main.c:936:6:resetBNO055	1
-../Core/Src/main.c:949:6:Error_Handler	1
+../Core/Src/main.c:941:6:resetBNO055	1
+../Core/Src/main.c:954:6:Error_Handler	1
